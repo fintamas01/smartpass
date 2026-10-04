@@ -24,6 +24,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import android.util.Patterns
 
 @Composable
 fun LoginScreen(
@@ -40,6 +41,14 @@ fun LoginScreen(
 
     var passwordVisible by remember {
         mutableStateOf(false)
+    }
+
+    var emailError by remember {
+        mutableStateOf<String?>(null)
+    }
+
+    var passwordError by remember {
+        mutableStateOf<String?>(null)
     }
 
     Column(
@@ -72,6 +81,10 @@ fun LoginScreen(
             value = email,
             onValueChange = {
                 email = it
+
+                if (emailError != null) {
+                    emailError = null
+                }
             },
             modifier = Modifier.fillMaxWidth(),
             label = {
@@ -80,7 +93,13 @@ fun LoginScreen(
             singleLine = true,
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Email
-            )
+            ),
+            isError = emailError != null,
+            supportingText = {
+                emailError?.let {
+                    Text(it)
+                }
+            }
         )
 
         Spacer(
@@ -91,6 +110,10 @@ fun LoginScreen(
             value = password,
             onValueChange = {
                 password = it
+
+                if (passwordError != null) {
+                    passwordError = null
+                }
             },
             modifier = Modifier.fillMaxWidth(),
             label = {
@@ -104,6 +127,12 @@ fun LoginScreen(
                 VisualTransformation.None
             } else {
                 PasswordVisualTransformation()
+            },
+            isError = passwordError != null,
+            supportingText = {
+                passwordError?.let {
+                    Text(it)
+                }
             },
             trailingIcon = {
                 TextButton(
@@ -127,7 +156,38 @@ fun LoginScreen(
         )
 
         Button(
-            onClick = onLoginClick,
+            onClick = {
+
+                val trimmedEmail = email.trim()
+
+                emailError = when {
+                    trimmedEmail.isEmpty() -> {
+                        "Email is required"
+                    }
+
+                    !Patterns.EMAIL_ADDRESS.matcher(trimmedEmail).matches() -> {
+                        "Enter a valid email address"
+                    }
+
+                    else -> null
+                }
+
+                passwordError = when {
+                    password.isEmpty() -> {
+                        "Password is required"
+                    }
+
+                    password.length < 8 -> {
+                        "Password must be at least 8 characters"
+                    }
+
+                    else -> null
+                }
+
+                if (emailError == null && passwordError == null) {
+                    onLoginClick()
+                }
+            },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Sign in")

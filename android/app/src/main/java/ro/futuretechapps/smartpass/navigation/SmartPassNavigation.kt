@@ -14,18 +14,18 @@ fun SmartPassNavigation() {
 
     NavHost(
         navController = navController,
-        startDestination = "login"
+        startDestination = Routes.LOGIN
     ) {
 
-        composable("login") {
+        composable(Routes.LOGIN) {
             LoginScreen(
                 onLoginClick = {
-                    navController.navigate("home")
+                    navController.navigate(Routes.HOME)
                 }
             )
         }
 
-        composable("home") {
+        composable(Routes.HOME) {
             HomeScreen()
         }
     }

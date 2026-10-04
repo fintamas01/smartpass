@@ -23,6 +23,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.runtime.LaunchedEffect
 
 @Composable
 fun LoginRoute(
@@ -32,16 +33,22 @@ fun LoginRoute(
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    LaunchedEffect(uiState.loginSucceeded) {
+
+        if (uiState.loginSucceeded) {
+
+            onLoginSuccess()
+
+            viewModel.consumeLoginSuccess()
+        }
+    }
+
     LoginScreen(
         uiState = uiState,
         onEmailChange = viewModel::onEmailChange,
         onPasswordChange = viewModel::onPasswordChange,
         onPasswordVisibilityClick = viewModel::togglePasswordVisibility,
-        onLoginClick = {
-            if (viewModel.validateLogin()) {
-                onLoginSuccess()
-            }
-        }
+        onLoginClick = viewModel::login
     )
 }
 
@@ -144,11 +151,31 @@ fun LoginScreen(
             modifier = Modifier.height(24.dp)
         )
 
+        uiState.loginError?.let { error ->
+
+            Text(
+                text = error,
+                color = MaterialTheme.colorScheme.error
+            )
+
+            Spacer(
+                modifier = Modifier.height(16.dp)
+            )
+        }
+
         Button(
             onClick = onLoginClick,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !uiState.isLoading
         ) {
-            Text("Sign in")
+
+            Text(
+                text = if (uiState.isLoading) {
+                    "Signing in..."
+                } else {
+                    "Sign in"
+                }
+            )
         }
     }
 }

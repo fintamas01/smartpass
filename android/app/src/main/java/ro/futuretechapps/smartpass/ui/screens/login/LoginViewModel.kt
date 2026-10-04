@@ -1,12 +1,19 @@
 package ro.futuretechapps.smartpass.ui.screens.login
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import java.io.IOException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import retrofit2.HttpException
+import ro.futuretechapps.smartpass.data.repository.AuthRepository
 
 class LoginViewModel : ViewModel() {
+
+    private val repository = AuthRepository()
 
     private val _uiState = MutableStateFlow(LoginUiState())
 
@@ -17,7 +24,8 @@ class LoginViewModel : ViewModel() {
         _uiState.update { currentState ->
             currentState.copy(
                 email = email,
-                emailError = null
+                emailError = null,
+                loginError = null
             )
         }
     }
@@ -26,7 +34,8 @@ class LoginViewModel : ViewModel() {
         _uiState.update { currentState ->
             currentState.copy(
                 password = password,
-                passwordError = null
+                passwordError = null,
+                loginError = null
             )
         }
     }
@@ -39,12 +48,97 @@ class LoginViewModel : ViewModel() {
         }
     }
 
-    fun validateLogin(): Boolean {
+    fun login() {
+
+        if (_uiState.value.isLoading) {
+            return
+        }
+
+        if (!validateLogin()) {
+            return
+        }
+
+        viewModelScope.launch {
+
+            _uiState.update {
+                it.copy(
+                    isLoading = true,
+                    loginError = null
+                )
+            }
+
+            try {
+
+                repository.login(
+                    email = _uiState.value.email,
+                    password = _uiState.value.password
+                )
+
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        loginSucceeded = true
+                    )
+                }
+
+            } catch (exception: HttpException) {
+
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        loginError = when (exception.code()) {
+
+                            422 -> {
+                                "Incorrect email or password"
+                            }
+
+                            401 -> {
+                                "Unauthorized"
+                            }
+
+                            else -> {
+                                "Login failed (${exception.code()})"
+                            }
+                        }
+                    )
+                }
+
+            } catch (exception: IOException) {
+
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        loginError = "Cannot connect to SmartPass server"
+                    )
+                }
+
+            } catch (exception: Exception) {
+
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        loginError = "An unexpected error occurred"
+                    )
+                }
+            }
+        }
+    }
+
+    fun consumeLoginSuccess() {
+        _uiState.update {
+            it.copy(
+                loginSucceeded = false
+            )
+        }
+    }
+
+    private fun validateLogin(): Boolean {
 
         val currentState = _uiState.value
         val trimmedEmail = currentState.email.trim()
 
         val emailError = when {
+
             trimmedEmail.isEmpty() -> {
                 "Email is required"
             }
@@ -57,6 +151,7 @@ class LoginViewModel : ViewModel() {
         }
 
         val passwordError = when {
+
             currentState.password.isEmpty() -> {
                 "Password is required"
             }
@@ -72,7 +167,8 @@ class LoginViewModel : ViewModel() {
             it.copy(
                 email = trimmedEmail,
                 emailError = emailError,
-                passwordError = passwordError
+                passwordError = passwordError,
+                loginError = null
             )
         }
 
@@ -84,6 +180,7 @@ class LoginViewModel : ViewModel() {
     }
 
     companion object {
+
         private val EMAIL_REGEX =
             Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")
     }

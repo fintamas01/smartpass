@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import ro.futuretechapps.smartpass.ui.screens.home.HomeScreen
+import ro.futuretechapps.smartpass.navigation.SmartPassNavigation
 import ro.futuretechapps.smartpass.ui.theme.SmartPassTheme
 
 class MainActivity : ComponentActivity() {
@@ -24,7 +24,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    HomeScreen()
+                    SmartPassNavigation()
                 }
             }
         }

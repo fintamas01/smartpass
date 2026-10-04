@@ -15,41 +15,44 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import android.util.Patterns
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+
+@Composable
+fun LoginRoute(
+    onLoginSuccess: () -> Unit,
+    viewModel: LoginViewModel = viewModel()
+) {
+
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    LoginScreen(
+        uiState = uiState,
+        onEmailChange = viewModel::onEmailChange,
+        onPasswordChange = viewModel::onPasswordChange,
+        onPasswordVisibilityClick = viewModel::togglePasswordVisibility,
+        onLoginClick = {
+            if (viewModel.validateLogin()) {
+                onLoginSuccess()
+            }
+        }
+    )
+}
 
 @Composable
 fun LoginScreen(
+    uiState: LoginUiState,
+    onEmailChange: (String) -> Unit,
+    onPasswordChange: (String) -> Unit,
+    onPasswordVisibilityClick: () -> Unit,
     onLoginClick: () -> Unit
 ) {
-
-    var email by remember {
-        mutableStateOf("")
-    }
-
-    var password by remember {
-        mutableStateOf("")
-    }
-
-    var passwordVisible by remember {
-        mutableStateOf(false)
-    }
-
-    var emailError by remember {
-        mutableStateOf<String?>(null)
-    }
-
-    var passwordError by remember {
-        mutableStateOf<String?>(null)
-    }
 
     Column(
         modifier = Modifier
@@ -78,14 +81,8 @@ fun LoginScreen(
         )
 
         OutlinedTextField(
-            value = email,
-            onValueChange = {
-                email = it
-
-                if (emailError != null) {
-                    emailError = null
-                }
-            },
+            value = uiState.email,
+            onValueChange = onEmailChange,
             modifier = Modifier.fillMaxWidth(),
             label = {
                 Text("Email")
@@ -94,9 +91,9 @@ fun LoginScreen(
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Email
             ),
-            isError = emailError != null,
+            isError = uiState.emailError != null,
             supportingText = {
-                emailError?.let {
+                uiState.emailError?.let {
                     Text(it)
                 }
             }
@@ -107,14 +104,8 @@ fun LoginScreen(
         )
 
         OutlinedTextField(
-            value = password,
-            onValueChange = {
-                password = it
-
-                if (passwordError != null) {
-                    passwordError = null
-                }
-            },
+            value = uiState.password,
+            onValueChange = onPasswordChange,
             modifier = Modifier.fillMaxWidth(),
             label = {
                 Text("Password")
@@ -123,25 +114,23 @@ fun LoginScreen(
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Password
             ),
-            visualTransformation = if (passwordVisible) {
+            visualTransformation = if (uiState.passwordVisible) {
                 VisualTransformation.None
             } else {
                 PasswordVisualTransformation()
             },
-            isError = passwordError != null,
+            isError = uiState.passwordError != null,
             supportingText = {
-                passwordError?.let {
+                uiState.passwordError?.let {
                     Text(it)
                 }
             },
             trailingIcon = {
                 TextButton(
-                    onClick = {
-                        passwordVisible = !passwordVisible
-                    }
+                    onClick = onPasswordVisibilityClick
                 ) {
                     Text(
-                        text = if (passwordVisible) {
+                        text = if (uiState.passwordVisible) {
                             "Hide"
                         } else {
                             "Show"
@@ -156,38 +145,7 @@ fun LoginScreen(
         )
 
         Button(
-            onClick = {
-
-                val trimmedEmail = email.trim()
-
-                emailError = when {
-                    trimmedEmail.isEmpty() -> {
-                        "Email is required"
-                    }
-
-                    !Patterns.EMAIL_ADDRESS.matcher(trimmedEmail).matches() -> {
-                        "Enter a valid email address"
-                    }
-
-                    else -> null
-                }
-
-                passwordError = when {
-                    password.isEmpty() -> {
-                        "Password is required"
-                    }
-
-                    password.length < 8 -> {
-                        "Password must be at least 8 characters"
-                    }
-
-                    else -> null
-                }
-
-                if (emailError == null && passwordError == null) {
-                    onLoginClick()
-                }
-            },
+            onClick = onLoginClick,
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Sign in")

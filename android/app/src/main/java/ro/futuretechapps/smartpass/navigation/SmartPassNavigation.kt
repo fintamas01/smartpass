@@ -5,7 +5,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import ro.futuretechapps.smartpass.ui.screens.home.HomeScreen
-import ro.futuretechapps.smartpass.ui.screens.login.LoginScreen
+import ro.futuretechapps.smartpass.ui.screens.login.LoginRoute
 
 @Composable
 fun SmartPassNavigation() {
@@ -18,9 +18,16 @@ fun SmartPassNavigation() {
     ) {
 
         composable(Routes.LOGIN) {
-            LoginScreen(
-                onLoginClick = {
-                    navController.navigate(Routes.HOME)
+
+            LoginRoute(
+                onLoginSuccess = {
+
+                    navController.navigate(Routes.HOME) {
+
+                        popUpTo(Routes.LOGIN) {
+                            inclusive = true
+                        }
+                    }
                 }
             )
         }

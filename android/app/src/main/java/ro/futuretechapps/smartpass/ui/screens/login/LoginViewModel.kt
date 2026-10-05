@@ -1,6 +1,7 @@
 package ro.futuretechapps.smartpass.ui.screens.login
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import java.io.IOException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -11,9 +12,12 @@ import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import ro.futuretechapps.smartpass.data.repository.AuthRepository
 
-class LoginViewModel : ViewModel() {
+class LoginViewModel(
+    application: Application
+) : AndroidViewModel(application) {
 
-    private val repository = AuthRepository()
+    private val repository =
+        AuthRepository(application)
 
     private val _uiState = MutableStateFlow(LoginUiState())
 

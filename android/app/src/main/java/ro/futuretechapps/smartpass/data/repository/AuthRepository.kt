@@ -6,6 +6,7 @@ import ro.futuretechapps.smartpass.data.local.SessionManager
 import ro.futuretechapps.smartpass.data.remote.api.ApiClient
 import ro.futuretechapps.smartpass.data.remote.model.LoginRequest
 import ro.futuretechapps.smartpass.data.remote.model.LoginResponse
+import ro.futuretechapps.smartpass.data.remote.model.UserDto
 
 class AuthRepository(
     context: Context
@@ -38,6 +39,39 @@ class AuthRepository(
         )
 
         return response
+    }
+
+    suspend fun getCurrentUser(): UserDto {
+
+        val token =
+            sessionManager.getToken()
+                ?: throw IllegalStateException(
+                    "No stored access token"
+                )
+
+        return ApiClient.authApi.me(
+            authorization = "Bearer $token"
+        ).user
+    }
+
+    suspend fun logout() {
+
+        val token =
+            sessionManager.getToken()
+
+        try {
+
+            if (token != null) {
+
+                ApiClient.authApi.logout(
+                    authorization = "Bearer $token"
+                )
+            }
+
+        } finally {
+
+            sessionManager.clearToken()
+        }
     }
 
     fun getStoredToken(): String? {
